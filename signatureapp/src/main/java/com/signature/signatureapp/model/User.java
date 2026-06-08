@@ -3,6 +3,8 @@ package com.signature.signatureapp.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -21,4 +23,6 @@ public class User {
     private String email;
 
     private String password;
+    @OneToMany(mappedBy = "user")
+    private List<Document> documents;
 }
