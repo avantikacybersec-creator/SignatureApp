@@ -27,20 +27,6 @@ import java.util.Date;
 public class JwtService {
 
 
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
-
-        System.out.println("JWT FILTER RUNNING");
-
-        String header = request.getHeader("Authorization");
-
-        System.out.println("Header = " + header);
-
-    }
-
     @Value("${jwt.secret}")
     private String secret;
     private SecretKey getSigningKey() {

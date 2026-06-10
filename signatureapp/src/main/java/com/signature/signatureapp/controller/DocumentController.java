@@ -1,8 +1,11 @@
 package com.signature.signatureapp.controller;
 
+import com.signature.signatureapp.model.Document;
 import com.signature.signatureapp.service.DocumentService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/documents")
@@ -19,5 +22,10 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file) {
 
         return documentService.upload(file);
+    }
+    @GetMapping
+    public List<Document> getMyDocuments() {
+
+        return documentService.getMyDocuments();
     }
 }

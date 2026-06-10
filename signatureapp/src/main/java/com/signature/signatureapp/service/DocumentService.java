@@ -1,8 +1,10 @@
 package com.signature.signatureapp.service;
 
 import com.signature.signatureapp.model.Document;
+import com.signature.signatureapp.model.User;
 import com.signature.signatureapp.repository.DocumentRepository;
 import com.signature.signatureapp.repository.UserRepository;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,17 +13,49 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class DocumentService {
 
     private final DocumentRepository repository;
-
-    public DocumentService(DocumentRepository repository) {
+    private final UserRepository userRepository;
+    public DocumentService(DocumentRepository repository,
+                           UserRepository userRepository) {
         this.repository = repository;
+        this.userRepository = userRepository;
+    }
+    public List<Document> getMyDocuments() {
+
+        System.out.println(
+                "AUTH = " +
+                        SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+        );
+
+        String email =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication()
+                        .getName();
+
+        User user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow();
+
+        return repository.findByUser(user);
     }
 
     public String upload(MultipartFile file) {
+
+        System.out.println(
+                "AUTH = " +
+                        SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+        );
 
         try {
 
@@ -46,6 +80,19 @@ public class DocumentService {
             document.setFileName(fileName);
             document.setFilePath(filePath.toString());
             document.setUploadedAt(LocalDateTime.now());
+
+            String email =
+                    SecurityContextHolder
+                            .getContext()
+                            .getAuthentication()
+                            .getName();
+
+            User user =
+                    userRepository
+                            .findByEmail(email)
+                            .orElseThrow();
+
+            document.setUser(user);
 
             repository.save(document);
 

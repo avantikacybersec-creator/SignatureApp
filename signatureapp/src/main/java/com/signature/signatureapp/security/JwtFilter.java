@@ -41,7 +41,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
             System.out.println("TOKEN RECEIVED");
 
-            if(jwtService.validateToken(token)){
+            boolean valid = jwtService.validateToken(token);
+
+            System.out.println("TOKEN VALID = " + valid);
+
+            if(valid){
 
                 System.out.println("TOKEN VALID");
 
