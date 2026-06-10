@@ -14,6 +14,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+
+import java.net.MalformedURLException;
 
 @Service
 public class DocumentService {
@@ -101,6 +105,28 @@ public class DocumentService {
         } catch (Exception e) {
 
             throw new RuntimeException(e.getMessage());
+        }
+    }
+    public Resource downloadDocument(Long id) {
+
+        try {
+
+            Document document =
+                    repository.findById(id)
+                            .orElseThrow();
+
+            Path path =
+                    Paths.get(document.getFilePath());
+
+            return new UrlResource(
+                    path.toUri()
+            );
+
+        } catch (MalformedURLException e) {
+
+            throw new RuntimeException(
+                    "File not found"
+            );
         }
     }
 }

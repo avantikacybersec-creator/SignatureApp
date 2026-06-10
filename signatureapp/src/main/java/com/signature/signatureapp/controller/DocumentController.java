@@ -2,6 +2,9 @@ package com.signature.signatureapp.controller;
 
 import com.signature.signatureapp.model.Document;
 import com.signature.signatureapp.service.DocumentService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,5 +30,21 @@ public class DocumentController {
     public List<Document> getMyDocuments() {
 
         return documentService.getMyDocuments();
+    }
+    @GetMapping("/download/{id}")
+    public ResponseEntity<Resource> download(
+            @PathVariable Long id) {
+
+        Resource file =
+                documentService.downloadDocument(id);
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\""
+                                + file.getFilename()
+                                + "\""
+                )
+                .body(file);
     }
 }
