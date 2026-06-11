@@ -47,4 +47,11 @@ public class DocumentController {
                 )
                 .body(file);
     }
+    @PostMapping("/sign/{id}")
+    public String signDocument(
+            @PathVariable Long id) {
+
+        return documentService
+                .signDocument(id);
+    }
 }

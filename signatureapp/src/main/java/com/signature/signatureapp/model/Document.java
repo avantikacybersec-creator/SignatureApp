@@ -23,6 +23,8 @@ public class Document {
     private String filePath;
 
     private LocalDateTime uploadedAt;
+    private boolean signed;
+    private LocalDateTime signedAt;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -84,7 +84,7 @@ public class DocumentService {
             document.setFileName(fileName);
             document.setFilePath(filePath.toString());
             document.setUploadedAt(LocalDateTime.now());
-
+            document.setSigned(false);
             String email =
                     SecurityContextHolder
                             .getContext()
@@ -128,5 +128,22 @@ public class DocumentService {
                     "File not found"
             );
         }
+
+    }
+    public String signDocument(Long id) {
+
+        Document document =
+                repository.findById(id)
+                        .orElseThrow();
+
+        document.setSigned(true);
+
+        document.setSignedAt(
+                LocalDateTime.now()
+        );
+
+        repository.save(document);
+
+        return "Document Signed Successfully";
     }
 }
