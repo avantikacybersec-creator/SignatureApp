@@ -25,4 +25,6 @@ public class User {
     private String password;
     @OneToMany(mappedBy = "user")
     private List<Document> documents;
+    @OneToOne(mappedBy = "user")
+    private Signature signature;
 }
