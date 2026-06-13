@@ -54,4 +54,11 @@ public class DocumentController {
         return documentService
                 .signDocument(id);
     }
+    @PostMapping("/apply-signature/{id}")
+    public String applySignature(
+            @PathVariable Long id) {
+
+        return documentService
+                .applySignature(id);
+    }
 }
