@@ -30,50 +30,39 @@ public class DocumentService {
     private final SignatureRepository signatureRepository;
     private final DocumentRepository repository;
     private final UserRepository userRepository;
+    private final AuditService auditService;
     public DocumentService(
             DocumentRepository repository,
             UserRepository userRepository,
-            SignatureRepository signatureRepository) {
+            SignatureRepository signatureRepository,
+            AuditService auditService) {
 
         this.repository = repository;
         this.userRepository = userRepository;
         this.signatureRepository = signatureRepository;
+        this.auditService = auditService;
     }
     public List<Document> getMyDocuments() {
 
-        System.out.println(
-                "AUTH = " +
-                        SecurityContextHolder
-                                .getContext()
-                                .getAuthentication()
-        );
-
-        String email =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getName();
+        String email = getCurrentUserEmail();
 
         User user =
                 userRepository
                         .findByEmail(email)
-                        .orElseThrow();
+                        .orElseThrow(() -> new RuntimeException("Not found"));
 
         return repository.findByUser(user);
     }
 
     public String upload(MultipartFile file) {
 
-        System.out.println(
-                "AUTH = " +
-                        SecurityContextHolder
-                                .getContext()
-                                .getAuthentication()
-        );
-
         try {
 
             String fileName = file.getOriginalFilename();
+
+            if (fileName == null || fileName.trim().isEmpty()) {
+                throw new RuntimeException("Invalid file name");
+            }
 
             Path uploadPath = Paths.get("uploads");
 
@@ -89,26 +78,28 @@ public class DocumentService {
                     StandardCopyOption.REPLACE_EXISTING
             );
 
+            String email = getCurrentUserEmail();
+
+            User user =
+                    userRepository
+                            .findByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("Not found"));
+
             Document document = new Document();
 
             document.setFileName(fileName);
             document.setFilePath(filePath.toString());
             document.setUploadedAt(LocalDateTime.now());
             document.setSigned(false);
-            String email =
-                    SecurityContextHolder
-                            .getContext()
-                            .getAuthentication()
-                            .getName();
-
-            User user =
-                    userRepository
-                            .findByEmail(email)
-                            .orElseThrow();
-
             document.setUser(user);
 
             repository.save(document);
+
+            auditService.log(
+                    email,
+                    "UPLOAD",
+                    document.getFileName()
+            );
 
             return "File Uploaded Successfully";
 
@@ -123,7 +114,7 @@ public class DocumentService {
 
             Document document =
                     repository.findById(id)
-                            .orElseThrow();
+                            .orElseThrow(() -> new RuntimeException("Not found"));
 
             Path path =
                     Paths.get(document.getFilePath());
@@ -144,7 +135,7 @@ public class DocumentService {
 
         Document document =
                 repository.findById(id)
-                        .orElseThrow();
+                        .orElseThrow(() -> new RuntimeException("Not found"));
 
         document.setSigned(true);
 
@@ -154,99 +145,131 @@ public class DocumentService {
 
         repository.save(document);
 
+        String email = getCurrentUserEmail();
+
+        auditService.log(
+                email,
+                "SIGN",
+                document.getFileName()
+        );
+
         return "Document Signed Successfully";
     }
-    public String applySignature(Long id) {
+    public String applySignature(
+            Long id,
+            float x,
+            float y) {
 
         try {
 
-            String email =
-                    SecurityContextHolder
-                            .getContext()
-                            .getAuthentication()
-                            .getName();
+            String email = getCurrentUserEmail();
 
             User user =
                     userRepository
                             .findByEmail(email)
-                            .orElseThrow();
+                            .orElseThrow(() -> new RuntimeException("Not found"));
 
             Document document =
                     repository.findById(id)
-                            .orElseThrow();
+                            .orElseThrow(() -> new RuntimeException("Not found"));
 
             com.signature.signatureapp.model.Signature signature =
                     signatureRepository
                             .findByUser(user)
-                            .orElseThrow();
+                            .orElseThrow(() -> new RuntimeException("Not found"));
 
-            PDDocument pdf =
-                    Loader.loadPDF(
-                            new java.io.File(
-                                    document.getFilePath()
-                            )
+            try (PDDocument pdf =
+                         Loader.loadPDF(
+                                 new java.io.File(
+                                         document.getFilePath()
+                                 ))) {
+
+                // existing PDF code here
+
+
+                PDPage page =
+                        pdf.getPage(0);
+
+                PDImageXObject image =
+                        PDImageXObject.createFromFile(
+                                signature.getImagePath(),
+                                pdf
+                        );
+
+                try (PDPageContentStream contentStream =
+                             new PDPageContentStream(
+                                     pdf,
+                                     page,
+                                     PDPageContentStream.AppendMode.APPEND,
+                                     true
+                             )) {
+
+                    contentStream.drawImage(
+                            image,
+                            x,
+                            y,
+                            120,
+                            60
                     );
+                }
 
-            PDPage page =
-                    pdf.getPage(0);
+                Path signedFolder =
+                        Paths.get("uploads/signed");
 
-            PDImageXObject image =
-                    PDImageXObject.createFromFile(
-                            signature.getImagePath(),
-                            pdf
-                    );
+                if (!Files.exists(signedFolder)) {
+                    Files.createDirectories(signedFolder);
+                }
 
-            PDPageContentStream contentStream =
-                    new PDPageContentStream(
-                            pdf,
-                            page,
-                            PDPageContentStream.AppendMode.APPEND,
-                            true
-                    );
+                String signedFileName =
+                        "signed_" + document.getFileName();
 
-            contentStream.drawImage(
-                    image,
-                    400,   // X Position
-                    100,   // Y Position
-                    120,   // Width
-                    60     // Height
-            );
+                Path signedPath =
+                        signedFolder.resolve(
+                                signedFileName
+                        );
 
-            contentStream.close();
+                pdf.save(
+                        signedPath.toFile()
+                );
 
-            Path signedFolder =
-                    Paths.get("uploads/signed");
+                pdf.close();
 
-            if (!Files.exists(signedFolder)) {
-                Files.createDirectories(signedFolder);
+                document.setSigned(true);
+                document.setSignedAt(LocalDateTime.now());
+
+                repository.save(document);
+                auditService.log(
+                        user.getEmail(),
+                        "APPLY_SIGNATURE",
+                        document.getFileName()
+                );
+
+                return "Document Signed And Saved Successfully";
+
+
             }
-
-            String signedFileName =
-                    "signed_" + document.getFileName();
-
-            Path signedPath =
-                    signedFolder.resolve(
-                            signedFileName
-                    );
-
-            pdf.save(
-                    signedPath.toFile()
-            );
-
-            pdf.close();
-
-            document.setSigned(true);
-            document.setSignedAt(LocalDateTime.now());
-
-            repository.save(document);
-
-            return "Document Signed And Saved Successfully";
-
         } catch (Exception e) {
 
             throw new RuntimeException(
                     e.getMessage()
             );
         }
+
+    }
+    private String getCurrentUserEmail() {
+
+        if (SecurityContextHolder
+                .getContext()
+                .getAuthentication() == null) {
+
+            throw new RuntimeException(
+                    "User not authenticated"
+            );
+        }
+
+        return SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
     }
 }

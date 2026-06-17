@@ -1,5 +1,6 @@
 package com.signature.signatureapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,5 +29,6 @@ public class Document {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"documents"})
     private User user;
 }

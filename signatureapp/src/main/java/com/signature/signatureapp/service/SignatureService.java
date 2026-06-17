@@ -37,7 +37,7 @@ public class SignatureService {
             User user =
                     userRepository
                             .findByEmail(email)
-                            .orElseThrow();
+                            .orElseThrow(() -> new RuntimeException("Not found"));
 
             Path uploadPath =
                     Paths.get("uploads/signatures");

@@ -1,5 +1,6 @@
 package com.signature.signatureapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,7 +25,9 @@ public class User {
 
     private String password;
     @OneToMany(mappedBy = "user")
+    @JsonIgnore
     private List<Document> documents;
     @OneToOne(mappedBy = "user")
+    @JsonIgnore
     private Signature signature;
 }

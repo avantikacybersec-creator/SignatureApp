@@ -42,7 +42,7 @@ public class UserService {
         User user =
                 userRepository.findByEmail(
                         request.getEmail()
-                ).orElseThrow();
+                ).orElseThrow(() -> new RuntimeException("Not found"));
 
         boolean matches =
                 passwordEncoder.matches(

@@ -1,5 +1,6 @@
 package com.signature.signatureapp.controller;
 
+import com.signature.signatureapp.dto.SignaturePositionRequest;
 import com.signature.signatureapp.model.Document;
 import com.signature.signatureapp.service.DocumentService;
 import org.springframework.core.io.Resource;
@@ -56,9 +57,13 @@ public class DocumentController {
     }
     @PostMapping("/apply-signature/{id}")
     public String applySignature(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestBody SignaturePositionRequest request) {
 
-        return documentService
-                .applySignature(id);
+        return documentService.applySignature(
+                id,
+                request.getX(),
+                request.getY()
+        );
     }
 }
