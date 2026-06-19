@@ -2,8 +2,10 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY target/signatureapp-0.0.1-SNAPSHOT.jar app.jar
+COPY . .
+
+RUN ./mvnw clean package
 
 EXPOSE 8080
 
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java","-jar","target/signatureapp-0.0.1-SNAPSHOT.jar"]
