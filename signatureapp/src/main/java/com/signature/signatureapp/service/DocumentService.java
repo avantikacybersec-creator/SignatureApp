@@ -118,7 +118,8 @@ public class DocumentService {
 
             Path path =
                     Paths.get(document.getFilePath());
-
+            System.out.println("Path: " + path);
+            System.out.println("Exists: " + Files.exists(path));
             return new UrlResource(
                     path.toUri()
             );
@@ -184,11 +185,25 @@ public class DocumentService {
                                          document.getFilePath()
                                  ))) {
 
-                // existing PDF code here
+                System.out.println(
+                        "PDF Loaded: " +
+                                document.getFilePath()
+                );
+
+                System.out.println(
+                        "Pages: " +
+                                pdf.getNumberOfPages()
+                );
 
 
                 PDPage page =
                         pdf.getPage(0);
+
+                float pdfHeight =
+                        page.getMediaBox().getHeight();
+
+                float pdfY =
+                        pdfHeight - y - 60;
 
                 PDImageXObject image =
                         PDImageXObject.createFromFile(
@@ -207,7 +222,7 @@ public class DocumentService {
                     contentStream.drawImage(
                             image,
                             x,
-                            y,
+                            pdfY,
                             120,
                             60
                     );
@@ -232,7 +247,9 @@ public class DocumentService {
                         signedPath.toFile()
                 );
 
-                pdf.close();
+                document.setFilePath(
+                        signedPath.toString()
+                );
 
                 document.setSigned(true);
                 document.setSignedAt(LocalDateTime.now());

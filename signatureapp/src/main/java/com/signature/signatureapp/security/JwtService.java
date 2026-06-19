@@ -1,27 +1,23 @@
 package com.signature.signatureapp.security;
 
 
+import com.signature.signatureapp.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.IOException;
+import io.jsonwebtoken.SignatureAlgorithm;
+
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SecureDigestAlgorithm;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+
 
 @Service
 public class JwtService {
@@ -29,25 +25,32 @@ public class JwtService {
 
     @Value("${jwt.secret}")
     private String secret;
-    private SecretKey getSigningKey() {
+    public SecretKey getSigningKey() {
 
         return Keys.hmacShaKeyFor(
                 secret.getBytes(StandardCharsets.UTF_8)
         );
     }
 
-    public String generateToken(String email) {
+    public String generateToken(User user) {
 
         return Jwts.builder()
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(
+                .setSubject(user.getEmail())
+                .claim(
+                        "role",
+                        user.getRole().name()
+                )
+                .setIssuedAt(new Date())
+                .setExpiration(
                         new Date(
                                 System.currentTimeMillis()
-                                        + 86400000
+                                        + 1000 * 60 * 60 * 24
                         )
                 )
-                .signWith(getSigningKey())
+                .signWith(
+                        getSigningKey(),
+                        SignatureAlgorithm.HS256
+                )
                 .compact();
     }
 
@@ -61,7 +64,16 @@ public class JwtService {
 
         return claims.getSubject();
     }
+    public String extractRole(String token) {
 
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.get("role", String.class);
+    }
     public boolean validateToken(String token) {
 
         try {

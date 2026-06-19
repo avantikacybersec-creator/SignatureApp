@@ -2,6 +2,7 @@ package com.signature.signatureapp.service;
 
 import com.signature.signatureapp.dto.LoginRequest;
 import com.signature.signatureapp.dto.RegisterRequest;
+import com.signature.signatureapp.model.Role;
 import com.signature.signatureapp.model.User;
 import com.signature.signatureapp.repository.UserRepository;
 import com.signature.signatureapp.security.JwtService;
@@ -33,11 +34,13 @@ public class UserService {
         user.setPassword(
                 passwordEncoder.encode(request.getPassword())
         );
+        user.setRole(Role.USER);
 
         return userRepository.save(user);
     }
 
     public String login(LoginRequest request){
+        System.out.println("LOGIN SUCCESS");
 
         User user =
                 userRepository.findByEmail(
@@ -55,9 +58,11 @@ public class UserService {
                     "Invalid Password"
             );
         }
-
+        System.out.println("LOGIN SUCCESS");
+        System.out.println(user.getEmail());
+        System.out.println(user.getRole());
         return jwtService.generateToken(
-                user.getEmail()
+                user
         );
     }
 }

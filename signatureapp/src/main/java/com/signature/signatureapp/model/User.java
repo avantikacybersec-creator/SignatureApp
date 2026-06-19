@@ -30,4 +30,17 @@ public class User {
     @OneToOne(mappedBy = "user")
     @JsonIgnore
     private Signature signature;
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+     public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }
+
+
+
